@@ -45,11 +45,17 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getUserNotifications(Long userId) {
-        return notificationRepository.findAllByUserId(userId).stream()
+    public List<NotificationResponse> getUserNotifications(Long userId, Boolean isRead) {
+        List<Notification> notifications;
+
+        if (isRead == null) {
+            notifications = notificationRepository.findAllByUserId(userId);
+        } else {
+            notifications = notificationRepository.findAllByUserIdAndIsRead(userId, isRead);
+        }
+
+        return notifications.stream()
                 .map(NotificationResponse::convertToResponse)
                 .toList();
     }
-
-
 }

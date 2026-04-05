@@ -29,8 +29,8 @@ public class NotificationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getUserNotifications(@RequestParam Long userId) {
-        List<NotificationResponse> responses = notificationService.getUserNotifications(userId);
+    public ResponseEntity<List<NotificationResponse>> getUserNotifications(@RequestParam Long userId, @RequestParam(required = false) Boolean isRead) {
+        List<NotificationResponse> responses = notificationService.getUserNotifications(userId, isRead);
         return ResponseEntity.ok(responses);
     }
 }
