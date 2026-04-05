@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
@@ -24,5 +26,11 @@ public class NotificationController {
     public ResponseEntity<NotificationResponse> getNotification(@PathVariable Long id) {
         NotificationResponse response = notificationService.getNotificationStatus(id);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> getUserNotifications(@RequestParam Long userId) {
+        List<NotificationResponse> responses = notificationService.getUserNotifications(userId);
+        return ResponseEntity.ok(responses);
     }
 }

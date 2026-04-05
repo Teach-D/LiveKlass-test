@@ -28,16 +28,24 @@ public class Notification extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private NotificationChannel channel;
 
-    public void updateStatus(NotificationStatus status) {
-        this.status = status;
-    }
+    private boolean isRead = false;
 
     @Builder
-    public Notification(String eventId, Long userId, NotificationType type, NotificationStatus status, NotificationChannel channel) {
+    public Notification(String eventId, Long userId, NotificationType type, NotificationStatus status, NotificationChannel channel, boolean isRead) {
         this.eventId = eventId;
         this.userId = userId;
         this.type = type;
         this.status = status;
         this.channel = channel;
+        this.isRead = isRead;
     }
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
+
+    public void updateStatus(NotificationStatus status) {
+        this.status = status;
+    }
+
 }
