@@ -34,17 +34,22 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public NotificationResponse getNotificationStatus(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
-        return NotificationResponse.builder()
-                .id(notification.getId())
-                .eventId(notification.getEventId())
-                .status(notification.getStatus())
-                .channel(notification.getChannel())
-                .createdAt(notification.getCreatedAt())
-                .build();
+        notification.markAsRead();
+
+        return NotificationResponse.convertToResponse(notification);
     }
+
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> getUserNotifications(Long userId) {
+        return notificationRepository.findAllByUserId(userId).stream()
+                .map(NotificationResponse::convertToResponse)
+                .toList();
+    }
+
+
 }

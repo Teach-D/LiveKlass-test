@@ -1,5 +1,6 @@
 package com.LiveKlass.LiveKlass.dto.response;
 
+import com.LiveKlass.LiveKlass.entity.Notification;
 import com.LiveKlass.LiveKlass.enums.NotificationChannel;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
 import lombok.AllArgsConstructor;
@@ -18,4 +19,16 @@ public class NotificationResponse {
     private NotificationStatus status;
     private NotificationChannel channel;
     private LocalDateTime createdAt;
+    private boolean isRead;
+
+    public static NotificationResponse convertToResponse(Notification notification) {
+        return NotificationResponse.builder()
+                .id(notification.getId())
+                .eventId(notification.getEventId())
+                .status(notification.getStatus())
+                .channel(notification.getChannel())
+                .isRead(notification.isRead())
+                .createdAt(notification.getCreatedAt())
+                .build();
+    }
 }
