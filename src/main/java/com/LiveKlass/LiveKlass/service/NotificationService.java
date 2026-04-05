@@ -2,6 +2,7 @@ package com.LiveKlass.LiveKlass.service;
 
 import com.LiveKlass.LiveKlass.dto.request.NotificationRequest;
 import com.LiveKlass.LiveKlass.dto.response.NotificationResponse;
+import com.LiveKlass.LiveKlass.dto.response.NotificationStatusResponse;
 import com.LiveKlass.LiveKlass.entity.Notification;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
 import com.LiveKlass.LiveKlass.exception.BusinessException;
@@ -35,7 +36,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public NotificationResponse getNotificationStatus(Long id) {
+    public NotificationResponse getNotification(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
@@ -57,5 +58,16 @@ public class NotificationService {
         return notifications.stream()
                 .map(NotificationResponse::convertToResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationStatusResponse getOnlyStatus(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        return NotificationStatusResponse.builder()
+                .id(notification.getId())
+                .status(notification.getStatus())
+                .build();
     }
 }
