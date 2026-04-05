@@ -1,8 +1,11 @@
 package com.LiveKlass.LiveKlass.service;
 
 import com.LiveKlass.LiveKlass.dto.request.NotificationRequest;
+import com.LiveKlass.LiveKlass.dto.response.NotificationResponse;
 import com.LiveKlass.LiveKlass.entity.Notification;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
+import com.LiveKlass.LiveKlass.exception.BusinessException;
+import com.LiveKlass.LiveKlass.exception.ErrorCode;
 import com.LiveKlass.LiveKlass.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,5 +32,19 @@ public class NotificationService {
                 .toList();
 
         notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationResponse getNotificationStatus(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        return NotificationResponse.builder()
+                .id(notification.getId())
+                .eventId(notification.getEventId())
+                .status(notification.getStatus())
+                .channel(notification.getChannel())
+                .createdAt(notification.getCreatedAt())
+                .build();
     }
 }
