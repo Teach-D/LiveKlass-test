@@ -5,6 +5,7 @@ import com.LiveKlass.LiveKlass.dto.response.NotificationResponse;
 import com.LiveKlass.LiveKlass.dto.response.NotificationStatusResponse;
 import com.LiveKlass.LiveKlass.entity.Notification;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
+import com.LiveKlass.LiveKlass.enums.SendTimeSlot;
 import com.LiveKlass.LiveKlass.exception.BusinessException;
 import com.LiveKlass.LiveKlass.exception.ErrorCode;
 import com.LiveKlass.LiveKlass.repository.NotificationRepository;
@@ -29,10 +30,15 @@ public class NotificationService {
                         .eventId(request.getEventId())
                         .channel(channel)
                         .status(NotificationStatus.PENDING)
+                        .sendTimeSlot(request.getSendTimeSlot())
                         .build())
                 .toList();
 
         notificationRepository.saveAll(notifications);
+
+        if (request.getSendTimeSlot() == SendTimeSlot.IMMEDIATE) {
+            notifications.forEach(this::sendImmediately);
+        }
     }
 
     @Transactional
@@ -69,5 +75,15 @@ public class NotificationService {
                 .id(notification.getId())
                 .status(notification.getStatus())
                 .build();
+    }
+
+    private void sendImmediately(Notification notification) {
+        try {
+            // 실제 외부 전송 로직
+            Thread.sleep(200); // 0.2초
+            notification.updateStatus(NotificationStatus.SUCCESS);
+        } catch (Exception e) {
+            notification.updateStatus(NotificationStatus.FAILED);
+        }
     }
 }
