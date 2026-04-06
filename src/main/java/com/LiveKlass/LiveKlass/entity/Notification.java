@@ -3,6 +3,7 @@ package com.LiveKlass.LiveKlass.entity;
 import com.LiveKlass.LiveKlass.enums.NotificationChannel;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
 import com.LiveKlass.LiveKlass.enums.NotificationType;
+import com.LiveKlass.LiveKlass.enums.SendTimeSlot;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,15 +29,19 @@ public class Notification extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private NotificationChannel channel;
 
+    @Enumerated(EnumType.STRING)
+    private SendTimeSlot sendTimeSlot;
+
     private boolean isRead = false;
 
     @Builder
-    public Notification(String eventId, Long userId, NotificationType type, NotificationStatus status, NotificationChannel channel, boolean isRead) {
+    public Notification(String eventId, Long userId, NotificationType type, NotificationStatus status, NotificationChannel channel, SendTimeSlot sendTimeSlot, boolean isRead) {
         this.eventId = eventId;
         this.userId = userId;
         this.type = type;
         this.status = status;
         this.channel = channel;
+        this.sendTimeSlot = sendTimeSlot;
         this.isRead = isRead;
     }
 
