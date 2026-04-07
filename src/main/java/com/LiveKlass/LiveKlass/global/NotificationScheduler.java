@@ -22,7 +22,7 @@ public class NotificationScheduler {
         notificationSendService.processScheduledNotifications(SendTimeSlot.AFTERNOON);
     }
 
-    @Scheduled(cron = "0 42 13 * * *")
+    @Scheduled(cron = "0 35 22 * * *")
     public void sendEveningNotifications() {
         notificationSendService.processScheduledNotifications(SendTimeSlot.EVENING);
     }

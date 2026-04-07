@@ -13,10 +13,11 @@ public class AsyncConfig {
     @Bean(name = "notificationExecutor")
     public Executor notificationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(10);
-        executor.setMaxPoolSize(10);
+        executor.setCorePoolSize(200);
+        executor.setMaxPoolSize(200);
         executor.setQueueCapacity(100000);
         executor.setThreadNamePrefix("notification-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;
     }
