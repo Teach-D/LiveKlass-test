@@ -1,5 +1,5 @@
 package com.LiveKlass.LiveKlass.enums;
 
 public enum OutboxStatus {
-    PENDING, LOCKED, PUBLISHED
+    PENDING, LOCKED, IN_QUEUE, PUBLISHED
 }
