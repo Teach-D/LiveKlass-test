@@ -4,10 +4,12 @@ import com.LiveKlass.LiveKlass.dto.request.NotificationRequest;
 import com.LiveKlass.LiveKlass.dto.response.NotificationResponse;
 import com.LiveKlass.LiveKlass.dto.response.NotificationStatusResponse;
 import com.LiveKlass.LiveKlass.entity.Notification;
+import com.LiveKlass.LiveKlass.entity.NotificationOutbox;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
 import com.LiveKlass.LiveKlass.enums.SendTimeSlot;
 import com.LiveKlass.LiveKlass.exception.BusinessException;
 import com.LiveKlass.LiveKlass.exception.ErrorCode;
+import com.LiveKlass.LiveKlass.repository.NotificationOutboxRepository;
 import com.LiveKlass.LiveKlass.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationOutboxRepository outboxRepository;
 
     public void registerNotification(NotificationRequest request) {
         List<Notification> notifications = request.getChannels().stream()
@@ -37,7 +40,13 @@ public class NotificationService {
         notificationRepository.saveAll(notifications);
 
         if (request.getSendTimeSlot() == SendTimeSlot.IMMEDIATE) {
-            notifications.forEach(this::sendImmediately);
+            List<NotificationOutbox> outboxEntries = notifications.stream()
+                    .map(n -> NotificationOutbox.create(n.getId()))
+                    .toList();
+            outboxRepository.saveAll(outboxEntries);
+
+            List<Long> ids = notifications.stream().map(Notification::getId).toList();
+            notificationRepository.updateStatusByIds(ids, NotificationStatus.PROCESSING);
         }
     }
 
@@ -75,15 +84,5 @@ public class NotificationService {
                 .id(notification.getId())
                 .status(notification.getStatus())
                 .build();
-    }
-
-    private void sendImmediately(Notification notification) {
-        try {
-            // 실제 외부 전송 로직
-            Thread.sleep(200); // 0.2초
-            notification.updateStatus(NotificationStatus.SUCCESS);
-        } catch (Exception e) {
-            notification.updateStatus(NotificationStatus.FAILED);
-        }
     }
 }

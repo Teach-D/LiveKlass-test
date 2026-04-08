@@ -1,5 +1,5 @@
 package com.LiveKlass.LiveKlass.enums;
 
 public enum NotificationStatus {
-    PENDING, SUCCESS, FAILED
+    PENDING, PROCESSING, SUCCESS, FAILED
 }
