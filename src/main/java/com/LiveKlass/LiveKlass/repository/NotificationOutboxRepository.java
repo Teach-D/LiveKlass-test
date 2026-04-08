@@ -17,4 +17,8 @@ public interface NotificationOutboxRepository extends JpaRepository<Notification
     @Modifying
     @Query("UPDATE NotificationOutbox o SET o.status = :status, o.publishedAt = CURRENT_TIMESTAMP WHERE o.id IN :ids")
     void markAsPublished(@Param("ids") List<Long> ids, @Param("status") OutboxStatus status);
+
+    @Modifying
+    @Query("UPDATE NotificationOutbox o SET o.retryCount = o.retryCount + 1 WHERE o.id IN :ids")
+    void incrementRetryCount(@Param("ids") List<Long> ids);
 }

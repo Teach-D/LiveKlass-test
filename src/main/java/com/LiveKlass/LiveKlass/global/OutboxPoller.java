@@ -31,7 +31,7 @@ public class OutboxPoller {
         if (pendingOutbox.isEmpty()) return;
 
         List<NotificationOutbox> toSend  = new ArrayList<>();
-        List<Long> skipIds = new ArrayList<>();
+        List<Long>  skipIds = new ArrayList<>();
 
         for (NotificationOutbox outbox : pendingOutbox) {
             notificationRepository.findById(outbox.getNotificationId()).ifPresent(n -> {
@@ -57,19 +57,24 @@ public class OutboxPoller {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        List<Long> successNotificationIds = new ArrayList<>();
-        List<Long> failedNotificationIds = new ArrayList<>();
-        List<Long> allOutboxIds = new ArrayList<>();
+        List<Long> successNotifIds = new ArrayList<>();
+        List<Long> successOutboxIds = new ArrayList<>();
+        List<NotificationOutbox> failedOutboxes = new ArrayList<>();
 
         for (int i = 0; i < toSend.size(); i++) {
             SendResult result = futures.get(i).getNow(new SendResult(0L, false));
-            allOutboxIds.add(toSend.get(i).getId());
-            if (result.success()) successNotificationIds.add(result.id());
-            else failedNotificationIds.add(result.id());
+            NotificationOutbox outbox = toSend.get(i);
+            if (result.success()) {
+                successNotifIds.add(result.id());
+                successOutboxIds.add(outbox.getId());
+            } else {
+                failedOutboxes.add(outbox);
+            }
         }
 
-        persistenceService.applyResults(successNotificationIds, failedNotificationIds, allOutboxIds);
+        persistenceService.applyResults(successNotifIds, successOutboxIds, failedOutboxes);
 
-        log.info("[Outbox] 처리 완료 - 성공={}, 실패={}", successNotificationIds.size(), failedNotificationIds.size());
+        log.info("[Outbox] 처리 완료 - 성공={}, 실패={} (재시도 대기 포함)",
+                successNotifIds.size(), failedOutboxes.size());
     }
 }

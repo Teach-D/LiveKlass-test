@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NotificationOutbox {
 
+    public static final int MAX_RETRIES = 3;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,6 +26,8 @@ public class NotificationOutbox {
     @Enumerated(EnumType.STRING)
     private OutboxStatus status;
 
+    private int retryCount;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime publishedAt;
@@ -32,12 +36,12 @@ public class NotificationOutbox {
         NotificationOutbox outbox = new NotificationOutbox();
         outbox.notificationId = notificationId;
         outbox.status = OutboxStatus.PENDING;
+        outbox.retryCount = 0;
         outbox.createdAt = LocalDateTime.now();
         return outbox;
     }
 
-    public void markAsPublished() {
-        this.status = OutboxStatus.PUBLISHED;
-        this.publishedAt = LocalDateTime.now();
+    public boolean isExhausted() {
+        return retryCount >= MAX_RETRIES;
     }
 }
