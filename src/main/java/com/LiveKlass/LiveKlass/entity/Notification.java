@@ -34,6 +34,8 @@ public class Notification extends BaseTimeEntity {
 
     private boolean isRead = false;
 
+    private String failureReason;
+
     @Builder
     public Notification(String eventId, Long userId, NotificationType type, NotificationStatus status, NotificationChannel channel, SendTimeSlot sendTimeSlot, boolean isRead) {
         this.eventId = eventId;

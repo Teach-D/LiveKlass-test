@@ -65,7 +65,9 @@ public class OutboxPersistenceService {
             outboxRepository.updateStatus(retryIds, OutboxStatus.PENDING);
         }
         if (!exhaustedNotifIds.isEmpty()) {
-            notificationRepository.updateStatusByIds(exhaustedNotifIds, NotificationStatus.FAILED);
+            notificationRepository.updateStatusAndReasonByIds(exhaustedNotifIds,
+                    NotificationStatus.FAILED,
+                    "RabbitMQ 발행 재시도 횟수(" + NotificationOutbox.MAX_RETRIES + "회) 소진");
             outboxRepository.markAsPublished(exhaustedOutboxIds, OutboxStatus.PUBLISHED);
         }
     }
@@ -83,7 +85,9 @@ public class OutboxPersistenceService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.OUTBOX_NOT_FOUND));
 
         if (outbox.isExhausted()) {
-            notificationRepository.updateStatusByIds(List.of(notificationId), NotificationStatus.FAILED);
+            notificationRepository.updateStatusAndReasonByIds(List.of(notificationId),
+                    NotificationStatus.FAILED,
+                    "알림 전송 재시도 횟수(" + NotificationOutbox.MAX_RETRIES + "회) 소진");
             outboxRepository.markAsPublished(List.of(outbox.getId()), OutboxStatus.PUBLISHED);
         } else {
             outboxRepository.incrementRetryCount(List.of(outbox.getId()));

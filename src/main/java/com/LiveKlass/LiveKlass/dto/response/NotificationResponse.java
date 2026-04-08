@@ -20,6 +20,7 @@ public class NotificationResponse {
     private NotificationChannel channel;
     private LocalDateTime createdAt;
     private boolean isRead;
+    private String failureReason;
 
     public static NotificationResponse convertToResponse(Notification notification) {
         return NotificationResponse.builder()
@@ -29,6 +30,7 @@ public class NotificationResponse {
                 .channel(notification.getChannel())
                 .isRead(notification.isRead())
                 .createdAt(notification.getCreatedAt())
+                .failureReason(notification.getFailureReason())
                 .build();
     }
 }
