@@ -2,7 +2,6 @@ package com.LiveKlass.LiveKlass.global;
 
 import com.LiveKlass.LiveKlass.entity.NotificationOutbox;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
-import com.LiveKlass.LiveKlass.enums.OutboxStatus;
 import com.LiveKlass.LiveKlass.global.NotificationItemService.SendResult;
 import com.LiveKlass.LiveKlass.repository.NotificationOutboxRepository;
 import com.LiveKlass.LiveKlass.repository.NotificationRepository;
@@ -25,15 +24,15 @@ public class OutboxPoller {
     private final NotificationItemService notificationItemService;
     private final OutboxPersistenceService persistenceService;
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 5_000)
     public void poll() {
-        List<NotificationOutbox> pendingOutbox = outboxRepository.findAllByStatus(OutboxStatus.PENDING);
-        if (pendingOutbox.isEmpty()) return;
+        List<NotificationOutbox> claimed = persistenceService.claimPending();
+        if (claimed.isEmpty()) return;
 
         List<NotificationOutbox> toSend  = new ArrayList<>();
-        List<Long>  skipIds = new ArrayList<>();
+        List<Long> skipIds = new ArrayList<>();
 
-        for (NotificationOutbox outbox : pendingOutbox) {
+        for (NotificationOutbox outbox : claimed) {
             notificationRepository.findById(outbox.getNotificationId()).ifPresent(n -> {
                 if (n.getStatus() == NotificationStatus.PROCESSING) {
                     toSend.add(outbox);

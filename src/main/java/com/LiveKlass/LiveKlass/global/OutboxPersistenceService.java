@@ -22,15 +22,25 @@ public class OutboxPersistenceService {
     private final NotificationOutboxRepository outboxRepository;
 
     @Transactional
+    public List<NotificationOutbox> claimPending() {
+        List<NotificationOutbox> pending = outboxRepository.findPendingForUpdate();
+        if (pending.isEmpty()) return pending;
+
+        List<Long> ids = pending.stream().map(NotificationOutbox::getId).toList();
+        outboxRepository.updateStatus(ids, OutboxStatus.LOCKED);
+        return pending;
+    }
+
+    @Transactional
     public void markSkipped(List<Long> outboxIds) {
         outboxRepository.markAsPublished(outboxIds, OutboxStatus.PUBLISHED);
     }
 
     @Transactional
-    public void applyResults(List<Long> successNotificationIds, List<Long> successOutboxIds,
+    public void applyResults(List<Long> successNotifIds, List<Long> successOutboxIds,
                              List<NotificationOutbox> failedOutboxes) {
-        if (!successNotificationIds.isEmpty()) {
-            notificationRepository.updateStatusByIds(successNotificationIds, NotificationStatus.SUCCESS);
+        if (!successNotifIds.isEmpty()) {
+            notificationRepository.updateStatusByIds(successNotifIds, NotificationStatus.SUCCESS);
             outboxRepository.markAsPublished(successOutboxIds, OutboxStatus.PUBLISHED);
         }
 
@@ -55,6 +65,7 @@ public class OutboxPersistenceService {
 
         if (!retryOutboxIds.isEmpty()) {
             outboxRepository.incrementRetryCount(retryOutboxIds);
+            outboxRepository.updateStatus(retryOutboxIds, OutboxStatus.PENDING);
         }
         if (!exhaustedNotifIds.isEmpty()) {
             notificationRepository.updateStatusByIds(exhaustedNotifIds, NotificationStatus.FAILED);
