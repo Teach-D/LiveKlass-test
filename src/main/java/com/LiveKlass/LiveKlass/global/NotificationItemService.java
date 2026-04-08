@@ -10,7 +10,6 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class NotificationItemService {
 
-
     @Async("notificationExecutor")
     public CompletableFuture<SendResult> sendSingle(Long notificationId) {
         try {

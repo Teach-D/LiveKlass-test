@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface NotificationOutboxRepository extends JpaRepository<NotificationOutbox, Long> {
+
+    Optional<NotificationOutbox> findByNotificationId(Long notificationId);
 
     @Query(value = "SELECT * FROM notification_outbox WHERE status = 'PENDING' FOR UPDATE SKIP LOCKED",
             nativeQuery = true)

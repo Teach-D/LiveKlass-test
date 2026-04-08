@@ -2,6 +2,8 @@ package com.LiveKlass.LiveKlass.global;
 
 import com.LiveKlass.LiveKlass.entity.NotificationOutbox;
 import com.LiveKlass.LiveKlass.enums.NotificationStatus;
+import com.LiveKlass.LiveKlass.exception.BusinessException;
+import com.LiveKlass.LiveKlass.exception.ErrorCode;
 import com.LiveKlass.LiveKlass.enums.OutboxStatus;
 import com.LiveKlass.LiveKlass.repository.NotificationOutboxRepository;
 import com.LiveKlass.LiveKlass.repository.NotificationRepository;
@@ -32,21 +34,20 @@ public class OutboxPersistenceService {
     }
 
     @Transactional
-    public void markSkipped(List<Long> outboxIds) {
+    public void markInQueue(List<Long> outboxIds) {
+        outboxRepository.updateStatus(outboxIds, OutboxStatus.IN_QUEUE);
+    }
+
+    @Transactional
+    public void markPublished(List<Long> outboxIds) {
         outboxRepository.markAsPublished(outboxIds, OutboxStatus.PUBLISHED);
     }
 
     @Transactional
-    public void applyResults(List<Long> successNotifIds, List<Long> successOutboxIds,
-                             List<NotificationOutbox> failedOutboxes) {
-        if (!successNotifIds.isEmpty()) {
-            notificationRepository.updateStatusByIds(successNotifIds, NotificationStatus.SUCCESS);
-            outboxRepository.markAsPublished(successOutboxIds, OutboxStatus.PUBLISHED);
-        }
-
+    public void applyPublishFailures(List<NotificationOutbox> failedOutboxes) {
         if (failedOutboxes.isEmpty()) return;
 
-        List<Long> retryOutboxIds = new ArrayList<>();
+        List<Long> retryIds = new ArrayList<>();
         List<Long> exhaustedNotifIds = new ArrayList<>();
         List<Long> exhaustedOutboxIds = new ArrayList<>();
 
@@ -54,22 +55,39 @@ public class OutboxPersistenceService {
             if (outbox.isExhausted()) {
                 exhaustedNotifIds.add(outbox.getNotificationId());
                 exhaustedOutboxIds.add(outbox.getId());
-                log.warn("[Outbox] 재시도 횟수 소진 - notificationId={}, retryCount={}",
-                        outbox.getNotificationId(), outbox.getRetryCount());
             } else {
-                retryOutboxIds.add(outbox.getId());
-                log.info("[Outbox] 재시도 예약 - notificationId={}, retryCount={}/{}",
-                        outbox.getNotificationId(), outbox.getRetryCount() + 1, NotificationOutbox.MAX_RETRIES);
+                retryIds.add(outbox.getId());
             }
         }
 
-        if (!retryOutboxIds.isEmpty()) {
-            outboxRepository.incrementRetryCount(retryOutboxIds);
-            outboxRepository.updateStatus(retryOutboxIds, OutboxStatus.PENDING);
+        if (!retryIds.isEmpty()) {
+            outboxRepository.incrementRetryCount(retryIds);
+            outboxRepository.updateStatus(retryIds, OutboxStatus.PENDING);
         }
         if (!exhaustedNotifIds.isEmpty()) {
             notificationRepository.updateStatusByIds(exhaustedNotifIds, NotificationStatus.FAILED);
             outboxRepository.markAsPublished(exhaustedOutboxIds, OutboxStatus.PUBLISHED);
+        }
+    }
+
+    @Transactional
+    public void onSendSuccess(Long notificationId) {
+        notificationRepository.updateStatusByIds(List.of(notificationId), NotificationStatus.SUCCESS);
+        outboxRepository.findByNotificationId(notificationId)
+                .ifPresent(o -> outboxRepository.markAsPublished(List.of(o.getId()), OutboxStatus.PUBLISHED));
+    }
+
+    @Transactional
+    public void handleSendFailure(Long notificationId) {
+        NotificationOutbox outbox = outboxRepository.findByNotificationId(notificationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.OUTBOX_NOT_FOUND));
+
+        if (outbox.isExhausted()) {
+            notificationRepository.updateStatusByIds(List.of(notificationId), NotificationStatus.FAILED);
+            outboxRepository.markAsPublished(List.of(outbox.getId()), OutboxStatus.PUBLISHED);
+        } else {
+            outboxRepository.incrementRetryCount(List.of(outbox.getId()));
+            outboxRepository.updateStatus(List.of(outbox.getId()), OutboxStatus.PENDING);
         }
     }
 }
