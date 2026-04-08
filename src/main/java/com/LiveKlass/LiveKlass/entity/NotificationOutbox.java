@@ -30,6 +30,8 @@ public class NotificationOutbox {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime lockedAt;
+
     private LocalDateTime publishedAt;
 
     public static NotificationOutbox create(Long notificationId) {
