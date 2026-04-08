@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class OutboxPersistenceService {
         if (pending.isEmpty()) return pending;
 
         List<Long> ids = pending.stream().map(NotificationOutbox::getId).toList();
-        outboxRepository.updateStatus(ids, OutboxStatus.LOCKED);
+        outboxRepository.lockWithTimestamp(ids, LocalDateTime.now());
         return pending;
     }
 
@@ -77,6 +78,17 @@ public class OutboxPersistenceService {
         notificationRepository.updateStatusByIds(List.of(notificationId), NotificationStatus.SUCCESS);
         outboxRepository.findByNotificationId(notificationId)
                 .ifPresent(o -> outboxRepository.markAsPublished(List.of(o.getId()), OutboxStatus.PUBLISHED));
+    }
+
+    @Transactional
+    public int recoverStuckLocked(int thresholdMinutes) {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(thresholdMinutes);
+        List<NotificationOutbox> stuck = outboxRepository.findStuckLocked(threshold);
+        if (stuck.isEmpty()) return 0;
+
+        List<Long> stuckIds = stuck.stream().map(NotificationOutbox::getId).toList();
+        outboxRepository.updateStatus(stuckIds, OutboxStatus.PENDING);
+        return stuckIds.size();
     }
 
     @Transactional
